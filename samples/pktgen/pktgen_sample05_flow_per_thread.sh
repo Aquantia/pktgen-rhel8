@@ -34,11 +34,13 @@ Q_PER_CPU="4"
 
 # Threads are specified with parameter -t value in $THREADS
 for ((thread = $F_THREAD; thread <= $L_THREAD; thread++)); do
+
+    pg_thread $thread "rem_device_all"
+
 for ((qpercpu = 0; qpercpu <= $Q_PER_CPU; qpercpu++)); do
     dev=${DEV}@${thread}_${qpercpu}
 
     # Add remove all other devices and add_device $dev to thread
-    pg_thread $thread "rem_device_all"
     pg_thread $thread "add_device" $dev
 
     # Base config
