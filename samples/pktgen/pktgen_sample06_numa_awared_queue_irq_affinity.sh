@@ -15,7 +15,6 @@ root_check_run_with_sudo "$@"
 source ${basedir}/parameters.sh
 
 # Base Config
-DELAY="0"        # Zero means max speed
 [ -z "$COUNT" ]     && COUNT="20000000"   # Zero means indefinitely
 [ -z "$CLONE_SKB" ] && CLONE_SKB="0"
 
@@ -37,7 +36,7 @@ fi
 [ -z "$DST_MAC" ] && DST_MAC="90:e2:ba:ff:ff:ff"
 
 # General cleanup everything since last run
-pg_ctrl "reset"
+[ -z "$PG_NO_RESET" ] && pg_ctrl "reset"
 
 # Threads are specified with parameter -t value in $THREADS
 for ((i = 0; i < $THREADS; i++)); do
@@ -51,7 +50,7 @@ for ((i = 0; i < $THREADS; i++)); do
     info "irq ${irq_array[$i]} is set affinity to `cat /proc/irq/${irq_array[$i]}/smp_affinity_list`"
 
     # Add remove all other devices and add_device $dev to thread
-    pg_thread $thread "rem_device_all"
+    [ -z "$PG_NO_REM_ALL" ] && pg_thread $thread "rem_device_all"
     pg_thread $thread "add_device" $dev
 
     # select queue and bind the queue and $dev in 1:1 relationship
@@ -83,9 +82,10 @@ for ((i = 0; i < $THREADS; i++)); do
     pg_set $dev "udp_src_max $UDP_MAX"
 done
 
+
 # start_run
-echo "Running... ctrl^C to stop" >&2
-pg_ctrl "start"
+[ -z "$PG_NO_START" ] && echo "Running... ctrl^C to stop" >&2
+[ -z "$PG_NO_START" ] && pg_ctrl "start"
 echo "Done" >&2
 
 # Print results
@@ -95,3 +95,4 @@ for ((i = 0; i < $THREADS; i++)); do
     echo "Device: $dev"
     cat /proc/net/pktgen/$dev | grep -A2 "Result:"
 done
+

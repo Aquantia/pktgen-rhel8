@@ -18,12 +18,13 @@ function usage() {
     echo "  -v : (\$VERBOSE)   verbose"
     echo "  -x : (\$DEBUG)     debug"
     echo "  -6 : (\$IP6)       IPv6"
+    echo "  -w : (\$DELAY)     Tx Delay value (us)"
     echo ""
 }
 
 ##  --- Parse command line arguments / parameters ---
 ## echo "Commandline options:"
-while getopts "s:i:d:m:f:t:c:n:b:vxh6" option; do
+while getopts "s:i:d:m:f:t:c:n:b:w:vxh6" option; do
     case $option in
         i) # interface
           export DEV=$OPTARG
@@ -61,6 +62,10 @@ while getopts "s:i:d:m:f:t:c:n:b:vxh6" option; do
 	  export BURST=$OPTARG
 	  info "SKB bursting: BURST=$BURST"
           ;;
+        w)
+	  export DELAY=$OPTARG
+	  info "DELAY=$DELAY"
+          ;;
         v)
           export VERBOSE=yes
           info "Verbose mode: VERBOSE=$VERBOSE"
@@ -94,6 +99,10 @@ fi
 if [ -z "$THREADS" ]; then
     export THREADS=1
 fi
+
+# default DELAY
+[ -z "$DELAY" ] && export DELAY=0 # Zero means max speed
+echo delay $DELAY 
 
 export L_THREAD=$(( THREADS + F_THREAD - 1 ))
 

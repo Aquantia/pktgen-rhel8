@@ -26,9 +26,6 @@ source ${basedir}/parameters.sh
 [ -z "$FLOWS" ]     && FLOWS="8000"
 [ -z "$FLOWLEN" ]   && FLOWLEN="10"
 
-# Base Config
-DELAY="0"  # Zero means max speed
-
 if [[ -n "$BURST" ]]; then
     err 1 "Bursting not supported for this mode"
 fi

@@ -34,9 +34,6 @@ fi
 [ -z "$CLONE_SKB" ] && CLONE_SKB="0" # No need for clones when bursting
 [ -z "$COUNT" ]     && COUNT="0" # Zero means indefinitely
 
-# Base Config
-DELAY="0"  # Zero means max speed
-
 # General cleanup everything since last run
 pg_ctrl "reset"
 

@@ -30,9 +30,12 @@ DELAY="0"  # Zero means max speed
 # General cleanup everything since last run
 pg_ctrl "reset"
 
+Q_PER_CPU="4"
+
 # Threads are specified with parameter -t value in $THREADS
 for ((thread = $F_THREAD; thread <= $L_THREAD; thread++)); do
-    dev=${DEV}@${thread}
+for ((qpercpu = 0; qpercpu <= $Q_PER_CPU; qpercpu++)); do
+    dev=${DEV}@${thread}_${qpercpu}
 
     # Add remove all other devices and add_device $dev to thread
     pg_thread $thread "rem_device_all"
@@ -62,6 +65,7 @@ for ((thread = $F_THREAD; thread <= $L_THREAD; thread++)); do
 	info "$dev: Not using burst"
     fi
 
+done
 done
 
 # Run if user hits control-c
