@@ -15,12 +15,13 @@ root_check_run_with_sudo "$@"
 source ${basedir}/parameters.sh
 
 # Base Config
+DELAY="0"        # Zero means max speed
 [ -z "$COUNT" ]     && COUNT="20000000"   # Zero means indefinitely
 [ -z "$CLONE_SKB" ] && CLONE_SKB="0"
 
 # Flow variation random source port between min and max
-UDP_MIN=9
-UDP_MAX=109
+UDP_SRC_MIN=9
+UDP_SRC_MAX=109
 
 node=`get_iface_node $DEV`
 irq_array=(`get_iface_irqs $DEV`)
@@ -34,9 +35,17 @@ if [ -z "$DEST_IP" ]; then
     [ -z "$IP6" ] && DEST_IP="198.18.0.42" || DEST_IP="FD00::1"
 fi
 [ -z "$DST_MAC" ] && DST_MAC="90:e2:ba:ff:ff:ff"
+if [ -n "$DEST_IP" ]; then
+    validate_addr${IP6} $DEST_IP
+    read -r DST_MIN DST_MAX <<< $(parse_addr${IP6} $DEST_IP)
+fi
+if [ -n "$DST_PORT" ]; then
+    read -r UDP_DST_MIN UDP_DST_MAX <<< $(parse_ports $DST_PORT)
+    validate_ports $UDP_DST_MIN $UDP_DST_MAX
+fi
 
 # General cleanup everything since last run
-[ -z "$PG_NO_RESET" ] && pg_ctrl "reset"
+pg_ctrl "reset"
 
 # Threads are specified with parameter -t value in $THREADS
 for ((i = 0; i < $THREADS; i++)); do
@@ -50,7 +59,7 @@ for ((i = 0; i < $THREADS; i++)); do
     info "irq ${irq_array[$i]} is set affinity to `cat /proc/irq/${irq_array[$i]}/smp_affinity_list`"
 
     # Add remove all other devices and add_device $dev to thread
-    [ -z "$PG_NO_REM_ALL" ] && pg_thread $thread "rem_device_all"
+    pg_thread $thread "rem_device_all"
     pg_thread $thread "add_device" $dev
 
     # select queue and bind the queue and $dev in 1:1 relationship
@@ -74,18 +83,25 @@ for ((i = 0; i < $THREADS; i++)); do
 
     # Destination
     pg_set $dev "dst_mac $DST_MAC"
-    pg_set $dev "dst$IP6 $DEST_IP"
+    pg_set $dev "dst${IP6}_min $DST_MIN"
+    pg_set $dev "dst${IP6}_max $DST_MAX"
+
+    if [ -n "$DST_PORT" ]; then
+	# Single destination port or random port range
+	pg_set $dev "flag UDPDST_RND"
+	pg_set $dev "udp_dst_min $UDP_DST_MIN"
+	pg_set $dev "udp_dst_max $UDP_DST_MAX"
+    fi
 
     # Setup random UDP port src range
     pg_set $dev "flag UDPSRC_RND"
-    pg_set $dev "udp_src_min $UDP_MIN"
-    pg_set $dev "udp_src_max $UDP_MAX"
+    pg_set $dev "udp_src_min $UDP_SRC_MIN"
+    pg_set $dev "udp_src_max $UDP_SRC_MAX"
 done
 
-
 # start_run
-[ -z "$PG_NO_START" ] && echo "Running... ctrl^C to stop" >&2
-[ -z "$PG_NO_START" ] && pg_ctrl "start"
+echo "Running... ctrl^C to stop" >&2
+pg_ctrl "start"
 echo "Done" >&2
 
 # Print results
@@ -95,4 +111,3 @@ for ((i = 0; i < $THREADS; i++)); do
     echo "Device: $dev"
     cat /proc/net/pktgen/$dev | grep -A2 "Result:"
 done
-
