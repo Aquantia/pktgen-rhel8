@@ -108,7 +108,7 @@ function pgset() {
     fi
 }
 
-[[ $EUID -eq 0 ]] && trap 'pg_ctrl "reset"' EXIT
+[ -z "$APPEND" ] && [ "$EUID" -eq 0 ] && trap '[ -z "$APPEND" ] && pg_ctrl "reset"' EXIT
 
 ## -- General shell tricks --
 
